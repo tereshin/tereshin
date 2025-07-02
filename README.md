@@ -1,1 +1,1 @@
-![Header](./assets/section1.svg?g)
+![Header](./assets/section-1.svg)
