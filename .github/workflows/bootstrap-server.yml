@@ -27,11 +27,16 @@ jobs:
       - name: Install sshpass
         run: sudo apt-get update && sudo apt-get install -y sshpass
 
+      - name: Add host key to known_hosts
+        run: |
+          mkdir -p ~/.ssh
+          ssh-keyscan -H "${DEV_HOST}" >> ~/.ssh/known_hosts
+
       - name: Upload bootstrap script
         run: |
-          sshpass -p "${DEV_PASSWORD}" scp -o StrictHostKeyChecking=no scripts/bootstrap-server.sh "${DEV_USER}@${DEV_HOST}:/tmp/bootstrap-server.sh"
+          sshpass -p "${DEV_PASSWORD}" scp scripts/bootstrap-server.sh "${DEV_USER}@${DEV_HOST}:/tmp/bootstrap-server.sh"
 
       - name: Bootstrap remote server
         run: |
-          sshpass -p "${DEV_PASSWORD}" ssh -o StrictHostKeyChecking=no "${DEV_USER}@${DEV_HOST}" "chmod +x /tmp/bootstrap-server.sh"
-          sshpass -p "${DEV_PASSWORD}" ssh -o StrictHostKeyChecking=no "${DEV_USER}@${DEV_HOST}" "sudo /tmp/bootstrap-server.sh ${DEV_USER} '${DEV_SSH_PUBLIC_KEY}'"
+          sshpass -p "${DEV_PASSWORD}" ssh "${DEV_USER}@${DEV_HOST}" "chmod +x /tmp/bootstrap-server.sh"
+          sshpass -p "${DEV_PASSWORD}" ssh "${DEV_USER}@${DEV_HOST}" "sudo /tmp/bootstrap-server.sh ${DEV_USER} '${DEV_SSH_PUBLIC_KEY}'"

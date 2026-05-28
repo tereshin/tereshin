@@ -36,6 +36,7 @@ Already available:
 Add:
 
 - `DEV_SSH_PUBLIC_KEY` — public key that will be added to `~/.ssh/authorized_keys` during bootstrap
+- `DEV_SSH_PRIVATE_KEY` — matching private key used by deploy workflow after password SSH is disabled
 - `LETSENCRYPT_EMAIL` — email for Let's Encrypt ACME registration
 
 ## First-time setup
@@ -52,6 +53,7 @@ Add:
    - key-based SSH only
    - only ports `22`, `80`, `443` open in UFW
 4. Run GitHub Actions workflow **Deploy to DEV** (`deploy.yml`) to publish containers.
+   This workflow uses `DEV_SSH_PRIVATE_KEY` when present and falls back to `DEV_PASSWORD` only if key is not provided.
 
 ## Runtime behavior
 

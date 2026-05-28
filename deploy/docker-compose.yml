@@ -1,6 +1,6 @@
 services:
   reverse-proxy:
-    image: traefik:v3.1
+    image: traefik:v3.1.0
     container_name: reverse-proxy
     command:
       - "--configFile=/etc/traefik/traefik.yml"
@@ -17,7 +17,7 @@ services:
       - web
 
   vozacki-rs:
-    image: traefik/whoami:v1.10
+    image: traefik/whoami:v1.10.0
     container_name: vozacki-rs
     restart: unless-stopped
     healthcheck:
@@ -36,7 +36,7 @@ services:
       - web
 
   app-vozacki-rs:
-    image: traefik/whoami:v1.10
+    image: traefik/whoami:v1.10.0
     container_name: app-vozacki-rs
     restart: unless-stopped
     healthcheck:
@@ -55,7 +55,7 @@ services:
       - web
 
   api-vozacki-rs:
-    image: traefik/whoami:v1.10
+    image: traefik/whoami:v1.10.0
     container_name: api-vozacki-rs
     restart: unless-stopped
     healthcheck:
