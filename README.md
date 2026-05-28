@@ -11,7 +11,7 @@ This repository now contains production bootstrap and deployment automation for:
 
 Stack:
 
-- Ubuntu 22 server bootstrap with SSH hardening, UFW, Fail2ban, Docker Engine, Docker Compose plugin
+- Ubuntu 22.04 LTS server bootstrap with SSH hardening, UFW, Fail2ban, Docker Engine, Docker Compose plugin
 - Traefik reverse proxy with automatic Let's Encrypt certificates
 - Three Docker services (currently placeholder `traefik/whoami`) routed by hostnames
 - GitHub Actions for one-time bootstrap and regular deploy

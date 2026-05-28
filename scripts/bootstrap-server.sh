@@ -10,7 +10,7 @@ TARGET_USER="${1:-}"
 SSH_PUBLIC_KEY="${2:-}"
 
 if [[ -z "${TARGET_USER}" || -z "${SSH_PUBLIC_KEY}" ]]; then
-  echo "Usage: $0 <target_user> <ssh_public_key>" >&2
+  echo "Usage: $0 <target_user> <ssh_public_key_contents>" >&2
   exit 1
 fi
 
