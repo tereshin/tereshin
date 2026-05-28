@@ -1,0 +1,77 @@
+services:
+  reverse-proxy:
+    image: traefik:v3.1
+    container_name: reverse-proxy
+    command:
+      - "--configFile=/etc/traefik/traefik.yml"
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./traefik/traefik.yml:/etc/traefik/traefik.yml:ro
+      - ./traefik/acme:/etc/traefik/acme
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    restart: unless-stopped
+    networks:
+      - web
+
+  vozacki-rs:
+    image: traefik/whoami:v1.10
+    container_name: vozacki-rs
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:80"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.vozacki-rs.rule=Host(`vozacki.rs`)"
+      - "traefik.http.routers.vozacki-rs.entrypoints=websecure"
+      - "traefik.http.routers.vozacki-rs.tls.certresolver=letsencrypt"
+      - "traefik.http.services.vozacki-rs.loadbalancer.server.port=80"
+    networks:
+      - web
+
+  app-vozacki-rs:
+    image: traefik/whoami:v1.10
+    container_name: app-vozacki-rs
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:80"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.app-vozacki-rs.rule=Host(`app.vozacki.rs`)"
+      - "traefik.http.routers.app-vozacki-rs.entrypoints=websecure"
+      - "traefik.http.routers.app-vozacki-rs.tls.certresolver=letsencrypt"
+      - "traefik.http.services.app-vozacki-rs.loadbalancer.server.port=80"
+    networks:
+      - web
+
+  api-vozacki-rs:
+    image: traefik/whoami:v1.10
+    container_name: api-vozacki-rs
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:80"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.api-vozacki-rs.rule=Host(`api.vozacki.rs`)"
+      - "traefik.http.routers.api-vozacki-rs.entrypoints=websecure"
+      - "traefik.http.routers.api-vozacki-rs.tls.certresolver=letsencrypt"
+      - "traefik.http.services.api-vozacki-rs.loadbalancer.server.port=80"
+    networks:
+      - web
+
+networks:
+  web:
+    external: true
