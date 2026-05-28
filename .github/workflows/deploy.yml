@@ -1,0 +1,75 @@
+name: Deploy to DEV
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    env:
+      DEV_HOST: ${{ secrets.DEV_HOST }}
+      DEV_USER: ${{ secrets.DEV_USER }}
+      DEV_PASSWORD: ${{ secrets.DEV_PASSWORD }}
+      DEV_SSH_PRIVATE_KEY: ${{ secrets.DEV_SSH_PRIVATE_KEY }}
+      LETSENCRYPT_EMAIL: ${{ secrets.LETSENCRYPT_EMAIL }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Validate required secrets
+        run: |
+          test -n "${DEV_HOST}"
+          test -n "${DEV_USER}"
+          test -n "${LETSENCRYPT_EMAIL}"
+          if [[ -z "${DEV_SSH_PRIVATE_KEY}" && -z "${DEV_PASSWORD}" ]]; then
+            echo "Either DEV_SSH_PRIVATE_KEY or DEV_PASSWORD must be set"
+            exit 1
+          fi
+
+      - name: Add host key to known_hosts
+        run: |
+          mkdir -p ~/.ssh
+          ssh-keyscan -H "${DEV_HOST}" >> ~/.ssh/known_hosts
+
+      - name: Prepare SSH key auth
+        if: ${{ env.DEV_SSH_PRIVATE_KEY != '' }}
+        run: |
+          printf '%s\n' "${DEV_SSH_PRIVATE_KEY}" > ~/.ssh/dev_key
+          chmod 600 ~/.ssh/dev_key
+
+      - name: Install sshpass (password fallback)
+        if: ${{ env.DEV_SSH_PRIVATE_KEY == '' }}
+        run: sudo apt-get update && sudo apt-get install -y sshpass
+
+      - name: Upload deployment files
+        run: |
+          if [[ -n "${DEV_SSH_PRIVATE_KEY}" ]]; then
+            ssh -i ~/.ssh/dev_key "${DEV_USER}@${DEV_HOST}" "mkdir -p /opt/vozacki/traefik"
+            scp -i ~/.ssh/dev_key deploy/docker-compose.yml "${DEV_USER}@${DEV_HOST}:/opt/vozacki/docker-compose.yml"
+            scp -i ~/.ssh/dev_key deploy/traefik/traefik.yml "${DEV_USER}@${DEV_HOST}:/opt/vozacki/traefik/traefik.yml"
+            ssh -i ~/.ssh/dev_key "${DEV_USER}@${DEV_HOST}" "cat > /opt/vozacki/.env <<'EOF'
+            LETSENCRYPT_EMAIL=${LETSENCRYPT_EMAIL}
+            EOF"
+          else
+            sshpass -p "${DEV_PASSWORD}" ssh "${DEV_USER}@${DEV_HOST}" "mkdir -p /opt/vozacki/traefik"
+            sshpass -p "${DEV_PASSWORD}" scp deploy/docker-compose.yml "${DEV_USER}@${DEV_HOST}:/opt/vozacki/docker-compose.yml"
+            sshpass -p "${DEV_PASSWORD}" scp deploy/traefik/traefik.yml "${DEV_USER}@${DEV_HOST}:/opt/vozacki/traefik/traefik.yml"
+            sshpass -p "${DEV_PASSWORD}" ssh "${DEV_USER}@${DEV_HOST}" "cat > /opt/vozacki/.env <<'EOF'
+            LETSENCRYPT_EMAIL=${LETSENCRYPT_EMAIL}
+            EOF"
+          fi
+
+      - name: Run remote deploy
+        run: |
+          if [[ -n "${DEV_SSH_PRIVATE_KEY}" ]]; then
+            scp -i ~/.ssh/dev_key scripts/deploy-remote.sh "${DEV_USER}@${DEV_HOST}:/tmp/deploy-remote.sh"
+            ssh -i ~/.ssh/dev_key "${DEV_USER}@${DEV_HOST}" "chmod +x /tmp/deploy-remote.sh && /tmp/deploy-remote.sh /opt/vozacki"
+          else
+            sshpass -p "${DEV_PASSWORD}" scp scripts/deploy-remote.sh "${DEV_USER}@${DEV_HOST}:/tmp/deploy-remote.sh"
+            sshpass -p "${DEV_PASSWORD}" ssh "${DEV_USER}@${DEV_HOST}" "chmod +x /tmp/deploy-remote.sh && /tmp/deploy-remote.sh /opt/vozacki"
+          fi
